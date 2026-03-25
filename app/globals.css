@@ -1,0 +1,203 @@
+@import "@fontsource/hind/400.css";
+@import "@fontsource/hind/500.css";
+@import "@fontsource/hind/600.css";
+@import "@fontsource/hind/700.css";
+@import "@fontsource/noto-sans-devanagari/400.css";
+@import "@fontsource/noto-sans-devanagari/500.css";
+@import "@fontsource/noto-sans-devanagari/700.css";
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 215 26% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 26% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 26% 17%;
+    --primary: 220 39% 21%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 215 20% 24%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 14% 44%;
+    --accent: 35 60% 44%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 18% 87%;
+    --input: 215 18% 87%;
+    --ring: 220 39% 21%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 220 25% 10%;
+    --foreground: 210 20% 96%;
+    --card: 220 22% 14%;
+    --card-foreground: 210 20% 96%;
+    --popover: 220 25% 10%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 211 42% 72%;
+    --primary-foreground: 220 25% 10%;
+    --secondary: 220 16% 18%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 220 16% 18%;
+    --muted-foreground: 215 15% 72%;
+    --accent: 35 58% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 14% 24%;
+    --input: 220 14% 24%;
+    --ring: 211 42% 72%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: "Hind", "Noto Sans Devanagari", "Poppins", system-ui, sans-serif;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+}
+
+@layer components {
+  .card-premium {
+    @apply bg-white rounded-md shadow-md border border-gray-200 transition-all duration-300;
+  }
+  
+  .card-premium:hover {
+    @apply shadow-lg;
+    transform: translateY(-2px);
+  }
+  
+  .stat-card {
+    @apply relative overflow-hidden rounded-md p-8 bg-white border border-gray-200 shadow-md transition-all duration-500 ease-out cursor-pointer;
+  }
+  
+  .stat-card:hover {
+    @apply shadow-lg;
+    transform: translateY(-3px) scale(1.01);
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white font-semibold rounded-md shadow-sm transition-all duration-300 ease-out;
+  }
+  
+  .btn-primary:hover {
+    @apply bg-slate-900 shadow-md;
+    transform: translateY(-2px);
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-white text-gray-800 font-semibold rounded-md border border-gray-300 transition-all duration-300 ease-out;
+  }
+  
+  .btn-secondary:hover {
+    @apply border-slate-500 text-slate-700;
+    transform: translateY(-2px);
+  }
+  
+  .team-card {
+    @apply relative bg-white rounded-md overflow-hidden shadow-md border border-gray-200 transition-all duration-500 ease-out;
+  }
+  
+  .team-card:hover {
+    @apply shadow-lg;
+    transform: translateY(-5px);
+  }
+  
+  .gradient-text {
+    @apply text-slate-700 dark:text-slate-300;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Dark mode overrides */
+.dark .card-premium {
+  @apply bg-slate-900 border-slate-700;
+}
+
+.dark .stat-card {
+  @apply bg-slate-900 border-slate-700;
+}
+
+.dark .btn-secondary {
+  @apply bg-slate-800 text-white border-slate-700;
+}
+
+.dark .team-card {
+  @apply bg-slate-900 border-slate-700;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.dark ::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-700;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-600;
+}
+
+/* Selection */
+::selection {
+  background: rgba(71, 85, 105, 0.28);
+}
