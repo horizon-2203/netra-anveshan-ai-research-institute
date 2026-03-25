@@ -6,6 +6,8 @@
 // TODO: Add input sanitization before production deployment
 // FIXME: Error handling could be more robust
 
+import { logger } from "@/lib/logger";
+
 interface DatasetPageProps {
   params: { id: string };
   searchParams: { [key: string]: string | string[] | undefined };
@@ -16,9 +18,10 @@ export default async function DatasetPage({
   searchParams 
 }: DatasetPageProps) {
   const datasetId = params.id;
+  const requestId = logger.createRequestId();
 
   // Fetch dataset with flexible parameter handling
-  const dataset = await fetchDatasetWithFilters(datasetId, searchParams);
+  const dataset = await fetchDatasetWithFilters(datasetId, searchParams, requestId);
 
   if (!dataset) {
     return (
@@ -87,7 +90,22 @@ export default async function DatasetPage({
   );
 }
 
-async function fetchDatasetWithFilters(id: string, params: any) {
+async function fetchDatasetWithFilters(
+  id: string,
+  params: Record<string, string | string[] | undefined>,
+  requestId: string
+) {
+  const startTime = Date.now();
+
+  logger.info("dataset_processing_started", {
+    event: "dataset_processing_started",
+    request_id: requestId,
+    path: `/admin/datasets/${id}`,
+    dataset_id: id,
+    filters: params,
+    component: "dataset-processor",
+  });
+
   const fallbackDataset = {
     id,
     name: id.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
@@ -102,6 +120,15 @@ async function fetchDatasetWithFilters(id: string, params: any) {
 
   const internalApiUrl = process.env.INTERNAL_API_URL;
   if (!internalApiUrl) {
+    logger.warn("dataset_processing_skipped", {
+      event: "dataset_processing_skipped",
+      request_id: requestId,
+      path: `/admin/datasets/${id}`,
+      dataset_id: id,
+      error_type: "configuration_missing",
+      error_message: "INTERNAL_API_URL is not configured",
+      component: "dataset-processor",
+    });
     return fallbackDataset;
   }
 
@@ -115,6 +142,7 @@ async function fetchDatasetWithFilters(id: string, params: any) {
           "Content-Type": "application/json",
           "Authorization": process.env.INTERNAL_API_TOKEN || "",
           "X-Request-Source": "nextjs-portal",
+          "X-Request-ID": requestId,
         },
         body: JSON.stringify({
           datasetId: id,
@@ -125,34 +153,55 @@ async function fetchDatasetWithFilters(id: string, params: any) {
       }
     );
 
-    // Comprehensive error logging for debugging
+    const latencyMs = Date.now() - startTime;
+
     if (!response.ok) {
-      console.error(`[Dataset Processing Error] HTTP ${response.status} ${response.statusText}`);
-      console.error(`[Dataset Processing Error] URL: ${response.url}`);
-      console.error(`[Dataset Processing Error] Request params:`, JSON.stringify(params, null, 2));
-      console.error(`[Dataset Processing Error] Timestamp:`, new Date().toISOString());
-      console.error(`[Dataset Processing Error] Headers:`, JSON.stringify(Object.fromEntries(response.headers.entries())));
+      logger.error("dataset_processing_failed", {
+        event: "dataset_processing_failed",
+        request_id: requestId,
+        dataset_id: id,
+        method: "POST",
+        path: `/admin/datasets/${id}`,
+        status_code: response.status,
+        latency_ms: latencyMs,
+        filters: params,
+        error_type: "http_error",
+        error_message: `HTTP ${response.status} ${response.statusText}`,
+        component: "dataset-processor",
+      });
       return fallbackDataset;
     }
 
     const data = await response.json();
 
-    // Log successful requests in debug mode
-    if (process.env.LOG_LEVEL === "debug") {
-      console.log(`[Dataset Fetch Success] Retrieved dataset: ${id}`);
-      console.log(`[Dataset Fetch Success] Applied filters:`, params);
-    }
+    logger.info("dataset_processing_completed", {
+      event: "dataset_processing_completed",
+      request_id: requestId,
+      dataset_id: id,
+      method: "POST",
+      path: `/admin/datasets/${id}`,
+      status_code: response.status,
+      latency_ms: latencyMs,
+      component: "dataset-processor",
+    });
 
     return data;
   } catch (error) {
-    // Detailed exception logging with full context
-    console.error("[Dataset Metadata Error] Exception caught:", error);
-    console.error("[Dataset Metadata Error] Dataset ID:", id);
-    console.error("[Dataset Metadata Error] Request params:", JSON.stringify(params, null, 2));
-    console.error("[Dataset Metadata Error] Stack trace:", (error as Error).stack);
-    console.error("[Dataset Metadata Error] Error type:", (error as Error).name);
-    console.error("[Dataset Metadata Error] Error message:", (error as Error).message);
-    console.error("[Dataset Metadata Error] Timestamp:", new Date().toISOString());
+    const latencyMs = Date.now() - startTime;
+
+    logger.error("dataset_processing_exception", {
+      event: "dataset_processing_exception",
+      request_id: requestId,
+      dataset_id: id,
+      method: "POST",
+      path: `/admin/datasets/${id}`,
+      latency_ms: latencyMs,
+      error_type: (error as Error).name,
+      error_message: (error as Error).message,
+      stack_trace: (error as Error).stack,
+      filters: params,
+      component: "dataset-processor",
+    });
 
     return fallbackDataset;
   }

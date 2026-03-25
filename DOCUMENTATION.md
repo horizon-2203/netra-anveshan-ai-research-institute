@@ -26,6 +26,50 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 ================================================================================
+MARCH 25, 2026 - LATEST EXECUTION UPDATE (CLI + DB)
+================================================================================
+
+This update supersedes older references that say database setup is still pending.
+
+COMPLETED IN THIS SESSION:
+- Supabase CLI installed successfully (Option A local binary path setup).
+- Supabase CLI login completed.
+- Project linked with ref: iuiqewnunafevgpulroh.
+- `supabase init` completed and migration structure created.
+- Initial schema migration added:
+  - supabase/migrations/20260325154700_init_schema.sql
+- Migration push completed successfully:
+  - supabase db push
+
+SCHEMA COMPATIBILITY FIX APPLIED:
+- Replaced `uuid_generate_v4()` with `gen_random_uuid()`.
+- Switched extension to `pgcrypto` in schema/migration files.
+
+CURRENT DATABASE STATE:
+- Tables created:
+  - datasets
+  - publications
+  - access_requests
+  - research_projects
+  - staff_users
+- No seed/sample INSERT statements are present in current schema.
+
+CURRENT LOCAL RUNTIME STATE:
+- Dev/start configured for port 8080.
+- `.env.local` kept minimal for testing:
+  - NODE_ENV
+  - NEXT_PUBLIC_SITE_URL
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - DEPLOY_TARGET_PATH
+  - ENABLE_FEATURE_FLAGS
+
+REMAINING REQUIRED ACTIONS:
+- Manually create intended staff users in Supabase Authentication -> Users.
+- Continue ERP data entry manually (no automatic seed insertion).
+
+================================================================================
 MARCH 24, 2026 - COMPLETE IMPLEMENTATION STATUS (DETAILED)
 ================================================================================
 
@@ -231,20 +275,21 @@ E) WHAT IS LEFT (PENDING / RECOMMENDED)
 -------------------------------------------------------------------------------
 
 Functional pending blockers:
-- Database environment initialization (if not already executed in Supabase).
+- Authentication user onboarding (Supabase Auth users) and live data entry.
 
 Database-specific pending checklist:
 1) Confirm Supabase project is active and credentials are set in .env.local:
   - NEXT_PUBLIC_SUPABASE_URL
   - NEXT_PUBLIC_SUPABASE_ANON_KEY
-2) Run full SQL from database-schema.sql in Supabase SQL Editor.
-3) Verify tables exist:
+2) Verify tables exist:
   - datasets
   - publications
   - access_requests
   - research_projects
-4) Verify RLS policies and indexes are created successfully.
-5) Confirm admin pages can read/write expected records after login.
+  - staff_users
+3) Verify RLS policies and indexes are created successfully.
+4) Confirm admin pages can read/write expected records after login.
+5) Add intended 6 staff users in Supabase Authentication -> Users.
 
 Recommended final QA (manual visual pass):
 1) Confirm crop/position for new hero images on About/Research/Contact pages
@@ -266,8 +311,8 @@ F) CURRENT OPERATIONAL STATUS
 - Main public routes tested repeatedly with successful responses when server is
   running.
 - Recent page edits were saved and diagnostics passed.
-- Database layer is defined via Supabase schema file but still requires
-  execution/verification in the target Supabase project if not already applied.
+- Database schema has been applied to Supabase via CLI migration push.
+- Current operational focus is auth user onboarding and real data entry.
 
 -------------------------------------------------------------------------------
 G) CHANGE CONTROL NOTE

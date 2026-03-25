@@ -1,0 +1,37 @@
+Throughput vs IOPS: Making Sense of Sequential and Random Reads/Writes
+
+When people talk about storage performance, you often hear the terms "Throughput," "IOPS," "Sequential Read/Write," and "Random Read/Write." These sound highly technical, but what do they actually mean in practice? And more importantly, how do you know which matters for your workload?
+
+Let’s start with a simple question.
+
+Why do some applications need high IOPS while others only need high throughput?
+
+Imagine you are eating rice. There are two ways you can do it:
+
+One grain at a time with a toothpick.
+
+A spoonful at a time with a big spoon.
+
+Eating grain by grain is like random I/O. Each scoop is tiny but you need a lot of scoops (operations) to get full. That means you need high IOPS (Input/Output Operations per Second).
+
+Eating spoonfuls is like sequential I/O. Each scoop is large, and you don’t need as many scoops. Here, what matters is throughput (how much data you can consume in a second), not the number of scoops.
+
+So, what’s the difference in technical terms?
+
+IOPS measures how many separate read or write operations your storage can handle every second. Think of it as how fast you can keep scooping, regardless of scoop size.
+
+Throughput measures how much data you can push through per second, usually in MB/s. Think of it as how much food you can actually eat in that time.
+
+Random I/O means data is scattered everywhere. The system has to jump around to fetch or write small pieces, just like flipping randomly through a book to read different sentences.
+
+Sequential I/O means data is lined up nicely in order. The system can just stream through it, like reading a book page by page.
+
+Now, let’s tie this to real-world applications.
+
+Databases that process thousands of tiny transactions (think bank systems or e-commerce) need high IOPS. Each query is like grabbing one grain of rice at a time, but doing it very quickly.
+
+Data warehouses, video processing, or analytics systems work differently. They scan or write large continuous blocks of data. For them, what matters most is high throughput. They don’t need a million tiny scoops. They just need a big, steady spoon.
+
+Here’s the big insight: high sequential throughput naturally reduces the need for high IOPS, because each operation carries more data.
+
+So, next time you are choosing between different types of storage, don’t just look at the IOPS number or the throughput speed in isolation. Think about the way your application “eats” its data. Does it pick at grains one by one, or does it shovel in spoonfuls?

@@ -33,18 +33,17 @@ A Next.js 16.0.5 web portal for Netra-Anveshan AI Research Institute featuring a
 
 ### 🔄 Pending / In Progress
 
-**Database Setup (CRITICAL - Blocking Admin Features):**
-- Database schema defined in `database-schema.sql` but NOT YET EXECUTED
-- Supabase project needs to run the SQL script
-- Tables don't exist yet: datasets, publications, access_requests, research_projects
-- Admin pages will fail to load data until database is set up
+**Current Backend State:**
+- Supabase CLI installed and linked to project `iuiqewnunafevgpulroh`
+- Schema migration pushed successfully via `supabase db push`
+- Tables now exist: datasets, publications, access_requests, research_projects, staff_users
+- Seed/sample inserts are intentionally removed from schema
 
 **Recommended Final Steps:**
-1. Execute database-schema.sql in Supabase SQL Editor
-2. Verify 4 tables + indexes + RLS policies are created
-3. Test admin pages with real data
-4. Visual QA on mobile/tablet for new hero layouts
-5. Security hardening patches (input sanitization, removed debug panel)
+1. Add intended 6 staff users in Supabase Authentication → Users
+2. Test admin pages with real data from ERP forms
+3. Visual QA on mobile/tablet for new hero layouts
+4. Security hardening patches (input sanitization, removed debug panel)
 
 ---
 
@@ -255,31 +254,39 @@ npm install
 ### Step 2: Configure Environment Variables
 Edit `.env.local`:
 ```bash
-# Supabase Configuration (get from your Supabase project settings)
+# Next.js
+NODE_ENV=development
+NEXT_PUBLIC_SITE_URL=http://localhost:8080
+
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_xxxx
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxx.xxxx.xxxx
 
-# Internal API (for dataset processing)
-INTERNAL_API_URL=http://localhost:8080
-INTERNAL_API_TOKEN=your-secret-api-token
+# Deploy path tracking
+DEPLOY_TARGET_PATH=/home/ubuntuksh/Documents/Project Adapt2.0/erp
 
-# Database (optional - auto-filled if using Supabase)
-DATABASE_URL=postgresql://user:pass@host:5432/database
-
-# Optional
-S3_ENDPOINT=https://s3.netra-anveshan.internal
-NODE_ENV=development
+# Feature flag
+ENABLE_FEATURE_FLAGS=false
 ```
 
-### Step 3: Set Up Database (CRITICAL!)
-**Database tables do NOT exist yet. You must create them:**
+### Step 3: Set Up Database
+Use either method below:
+
+**Method A (CLI - currently used in this project):**
+```bash
+supabase login
+supabase link --project-ref iuiqewnunafevgpulroh
+supabase db push
+```
+
+**Method B (Dashboard SQL Editor):**
 
 1. Go to your Supabase project dashboard
 2. Click "SQL Editor"
 3. Click "New Query"
 4. Copy entire contents from [`database-schema.sql`](database-schema.sql)
 5. Click "Run"
-6. Verify success message: "Database schema created successfully!"
 
 **Verify tables were created:**
 ```bash
@@ -288,26 +295,46 @@ NODE_ENV=development
 - publications
 - access_requests
 - research_projects
+- staff_users
 ```
+
+### Step 3B: Add Staff Login Users in Supabase Auth
+After running [`database-schema.sql`](database-schema.sql), create auth users so portal login works.
+
+1. Open Supabase Dashboard → Authentication → Users
+2. Click "Add user" for each staff email
+3. Set a temporary password (or send invite link)
+4. Ask each user to reset password after first login
+
+**Intended ERP users:**
+
+| Name | Role | Email |
+|------|------|-------|
+| Dr. Shreyansh Samir | Senior Researcher | dr.shreyansh.samir@netra-anveshan.org.in |
+| Dr. Milind Rai | Research Scientist | dr.milind.rai@netra-anveshan.org.in |
+| Utpal Kant | Lead Developer | utpal.kant@netra-anveshan.org.in |
+| Nitish Kumar | Senior Developer | nitish.kumar@netra-anveshan.org.in |
+| Dr. Bheem Shukla | Professor | dr.bheem.shukla@netra-anveshan.org.in |
+| Dr. Samay Raina | Assistant Professor | dr.samay.raina@netra-anveshan.org.in |
 
 ### Step 4: Run Development Server
 ```bash
 npm run dev
 ```
-Server will start on `http://localhost:3000`
+Server will start on `http://localhost:8080`
 
 ### Step 5: Test the Application
 
 **Test Public Pages:**
 ```bash
-curl http://localhost:3000/
-curl http://localhost:3000/about
-curl http://localhost:3000/research
-curl http://localhost:3000/contact
+curl http://localhost:8080/
+curl http://localhost:8080/about
+curl http://localhost:8080/research
+curl http://localhost:8080/contact
 ```
 
 **Test Staff Login:**
-1. Visit `http://localhost:3000/portal`
+1. Visit `http://localhost:8080/portal`
 2. Use one of the staff emails (needs to be created in Supabase Auth)
 3. Should redirect to `/admin` dashboard
 
@@ -466,9 +493,9 @@ All tables have indexes and Row-Level Security (RLS) policies enabled.
 ## 🔧 Available NPM Commands
 
 ```bash
-npm run dev          # Start development server on port 3000
+npm run dev          # Start development server on port 8080
 npm run build        # Build for production
-npm run start        # Start production server
+npm run start        # Start production server on port 8080
 npm run lint         # Run ESLint
 npm run type-check   # Run TypeScript type checking
 ```
@@ -480,16 +507,16 @@ npm run type-check   # Run TypeScript type checking
 ```bash
 # REQUIRED - Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=              # Your Supabase project URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=  # Optional fallback publishable key
 NEXT_PUBLIC_SUPABASE_ANON_KEY=         # Public anon key (safe to expose)
-SUPABASE_SERVICE_ROLE_KEY=             # Secret role key (backend only!)
 
-# REQUIRED - Internal API
-INTERNAL_API_URL=                      # Backend API endpoint for processing
-INTERNAL_API_TOKEN=                    # Secret API token (backend only!)
+# Local/Server path tracking
+DEPLOY_TARGET_PATH=
 
-# OPTIONAL - Database
-DATABASE_URL=                          # PostgreSQL connection string
-S3_ENDPOINT=                           # S3-compatible storage endpoint
+# Feature toggle
+ENABLE_FEATURE_FLAGS=false
+
+# Next.js mode
 NODE_ENV=development                   # development, production, test
 
 # Note: .env.local is in .gitignore (won't be committed to Git)
@@ -507,7 +534,7 @@ NODE_ENV=development                   # development, production, test
 | Mar 25 | Server recovery (500 error fix) | ✅ Complete |
 | Mar 25 | Security audit (5 vulnerability classes) | ✅ Complete |
 | Mar 25 | Documentation comprehensive update | ✅ Complete |
-| TBD | Database execution in Supabase | 🔄 Pending |
+| Mar 25 | Supabase CLI setup + db push migration | ✅ Complete |
 | TBD | Security hardening patches | 🔄 Pending |
 | TBD | Final visual QA across devices | 🔄 Pending |
 
@@ -534,13 +561,31 @@ git push origin main
 ```bash
 npm run build
 npm start
-# Listening on http://localhost:3000
+# Listening on http://localhost:80
 ```
 
 ### Deploy with Docker
 ```bash
 docker build -t netra-anveshan .
-docker run -p 3000:3000 --env-file .env.local netra-anveshan
+docker run -p 80:3000 --env-file .env.local -v "$PWD/logs:/app/logs" -v "$PWD/uploads:/app/uploads" netra-anveshan
+```
+
+### Deploy by TAR.GZ on Another Machine
+```bash
+# On source machine
+tar -czf erp-release.tgz erp
+
+# Copy erp-release.tgz to target machine, then:
+tar -xzf erp-release.tgz
+cd erp
+
+# Build and run on host port 80
+docker compose up -d --build
+
+# Check service and logs
+docker compose ps
+tail -f logs/app.log
+tail -f logs/docker/container.log
 ```
 
 ---
@@ -602,9 +647,9 @@ For detailed information:
 
 ## 📝 Notes
 
-- **Database** needs setup before admin features work
+- **Database schema** is now pushed to Supabase via CLI migration
 - **Security hardening** recommended before production deployment
-- **Dev server** runs on `http://localhost:3000` by default
+- **Dev server** runs on `http://localhost:8080`
 - **Production build** can be deployed to Vercel, AWS, or any Node.js host
 
 ---
@@ -612,5 +657,5 @@ For detailed information:
 **Project:** Netra-Anveshan AI Research Institute Portal  
 **Last Updated:** March 25, 2026  
 **Version:** 1.0.0  
-**Status:** Pre-Production (Database & Security Patches Pending)  
+**Status:** Pre-Production (Auth Onboarding & Security Patches Pending)  
 **Maintainer:** Development Team

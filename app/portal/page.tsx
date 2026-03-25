@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { v4 as uuidv4 } from "uuid";
 import { Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +18,21 @@ export default function PortalPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const emitAuthLog = async (payload: Record<string, unknown>) => {
+    try {
+      await fetch("/api/logs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+    } catch {
+      // Never block auth UX because of logging errors.
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     const stored = localStorage.getItem("theme");
@@ -29,6 +45,17 @@ export default function PortalPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    const requestId = uuidv4();
+
+    void emitAuthLog({
+      level: "INFO",
+      event: "auth_attempt",
+      message: "auth_attempt",
+      request_id: requestId,
+      path: "/portal",
+      email,
+      component: "portal-login",
+    });
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -39,9 +66,31 @@ export default function PortalPage() {
       if (error) throw error;
 
       if (data?.session) {
+        void emitAuthLog({
+          level: "INFO",
+          event: "auth_success",
+          message: "auth_success",
+          request_id: requestId,
+          path: "/portal",
+          user_id: data.user?.id,
+          email: data.user?.email,
+          session_id: data.session.user?.id,
+          component: "portal-login",
+        });
         router.push("/admin");
       }
     } catch (err: any) {
+      void emitAuthLog({
+        level: "WARN",
+        event: "auth_failure",
+        message: "auth_failure",
+        request_id: requestId,
+        path: "/portal",
+        email,
+        error_type: "invalid_credentials",
+        error_message: err?.message,
+        component: "portal-login",
+      });
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
