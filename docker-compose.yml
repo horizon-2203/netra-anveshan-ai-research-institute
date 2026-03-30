@@ -1,24 +1,17 @@
 services:
   web:
     image: netra-anveshan-portal:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    pull_policy: never
     container_name: netra-anveshan-portal
     ports:
       - "80:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY}
-      - INTERNAL_API_URL=${INTERNAL_API_URL}
+      - NEXT_PUBLIC_SUPABASE_URL=https://iuiqewnunafevgpulroh.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1aXFld251bmFmZXZncHVscm9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzA1OTMsImV4cCI6MjA4OTgwNjU5M30.TUSzN3MNQ1EjcqS2olG1nROTu1hS8SmriIKTpXp_iBM
+      - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_4m4yTKOOfYAh1slhhaoI1w_uNsAB5YF
+      - INTERNAL_API_URL=http://127.0.0.1:3000
       - LOG_LEVEL=info
-    env_file:
-      - .env.local
-    volumes:
-      - ./logs:/app/logs
-      - ./uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:3000/"]
       interval: 30s
