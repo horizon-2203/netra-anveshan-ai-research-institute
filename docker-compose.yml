@@ -2,6 +2,9 @@ services:
   web:
     image: netra-anveshan-portal:latest
     pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: netra-anveshan-portal
     ports:
       - "80:3000"

@@ -1,220 +1,652 @@
-# Netra-Anveshan ERP - Comprehensive Technical Documentation
+# Netra-Anveshan ERP - Deep Technical Documentation
 
-Last audited: 30 March 2026
-Audit scope: Full project pass across source code, API routes, middleware, logging, scripts, Docker, SQL schema, and Supabase migrations.
+Audit Date: 30 March 2026
+Audit Method: Full repository pass over tracked code/config/sql/script files + deployment behavior verification.
 
-## 1. Project Purpose
+---
 
-This repository implements:
-- A public institute website.
-- A staff login portal.
-- A protected ERP-style admin panel backed by Supabase.
-- File-based operational logging with request tracing and optional IP geolocation.
+## 1. Executive Summary
 
-## 2. Runtime Architecture
+This project is a Next.js 16 App Router application that combines:
+- Public institute website pages.
+- Supabase-backed staff authentication portal.
+- Protected admin ERP modules (datasets, publications, requests, projects, profile).
+- Structured application logging pipeline with request tracing and GeoIP enrichment.
+- Dockerized production runtime with image export/import deployment workflow.
 
-### Frontend and app framework
-- Next.js App Router in `app/`.
-- React client components for interactive pages.
-- Tailwind CSS for styling.
+Current repository branch: `main`
+Remote: `origin` -> `git@github.com:horizon-2203/netra-anveshan-ai-research-institute.git`
 
-### Authentication and data
-- Supabase client initialized in `lib/supabase/client.ts`.
-- Portal login uses `supabase.auth.signInWithPassword`.
-- Admin section is gated by `components/ProtectedRoute.tsx`.
+---
 
-### API endpoints
-- `app/api/logs/route.ts`: receives structured logs from middleware/client and forwards to logger.
-- `app/api/uploads/route.ts`: receives file uploads for allowed categories and writes to disk.
+## 2. Exact Version and Build Matrix
 
-### Request logging pipeline
-1. `middleware.ts` generates/propagates request IDs and logs request start/end.
-2. Middleware forwards payloads to `/api/logs`.
-3. `app/api/logs/route.ts` enriches with geo data and calls `logger.log`.
-4. `lib/logger.ts` sanitizes sensitive content and writes JSON logs via `scripts/write_log.py`.
-5. Route-specific and global log files are stored in `logs/`.
+### Runtime and language
+- Node.js (engine): `20.11.0`
+- Next.js: `16.0.5`
+- React: `19.1.0`
+- React DOM: `19.1.0`
+- TypeScript: `^5.5.3`
 
-### Docker runtime
-- Multi-stage build in `Dockerfile`.
-- Production launch script: `scripts/start-with-logs.sh`.
-- Compose service with healthcheck and hardening in `docker-compose.yml`.
+### Core dependencies
+- `@supabase/supabase-js`: `^2.49.1`
+- `@hookform/resolvers`: `^3.9.0`
+- `react-hook-form`: `^7.53.0`
+- `zod`: `^3.23.8`
+- `uuid`: `^11.1.0`
+- `lucide-react`: `^0.451.0`
+- `sonner`: `^1.5.0`
+- `class-variance-authority`: `^0.7.0`
+- `clsx`: `^2.1.1`
+- `tailwind-merge`: `^2.5.2`
 
-## 3. Code File Inventory (Acknowledgement of Each Code/Config File)
+### UI and typography packages
+- `@fontsource/hind`: `^5.2.8`
+- `@fontsource/noto-sans-devanagari`: `^5.2.8`
+- `@fontsource/poppins`: `^5.2.7`
+- Radix UI family packages present (accordion, dialog, select, tabs, toast, etc.)
 
-This section maps every authored code/config/script/SQL file reviewed during audit.
+### Dev toolchain
+- `eslint`: `^9.9.0`
+- `eslint-config-next`: `16.0.5`
+- `postcss`: `^8.4.47`
+- `autoprefixer`: `^10.4.20`
+- `tailwindcss`: `^3.4.11`
 
-### 3.1 Root configuration and project meta
-- `package.json`: scripts (`dev:8080`, `start:80`), dependencies, engine.
-- `next.config.js`: standalone output, permissive CORS header for `/api/*`, image remote patterns.
-- `tsconfig.json`: strict TS setup and `@/*` path alias.
-- `tailwind.config.ts`: design tokens and animation definitions.
-- `postcss.config.js`: Tailwind + Autoprefixer.
-- `next-env.d.ts`: Next generated typing references.
-- `.gitignore`: excludes env files, logs, node_modules, build artifacts.
-- `.dockerignore`: excludes local/dev artifacts from image context.
-- `.env.local`: runtime env values (contains secrets; keep private).
+---
 
-### 3.2 App Router pages and layouts
-- `app/layout.tsx`: global metadata and root HTML shell.
-- `app/globals.css`: design system variables, utility classes, custom components.
-- `app/page.tsx`: homepage sections, hero, team, mission, news.
-- `app/about/page.tsx`: about hero, snapshots, leadership, research divisions.
-- `app/research/page.tsx`: tabbed research divisions, stats, projects, collaboration CTA.
-- `app/facilities/page.tsx`: infra stats, specs, labs.
-- `app/contact/page.tsx`: contact info and client-only simulated form submission.
-- `app/portal/page.tsx`: staff login, auth events logging, redirect to `/admin`.
-- `app/privacy-policy/page.tsx`: long-form privacy policy page.
-- `app/admin/layout.tsx`: protected admin shell with sidebar and theme toggle.
-- `app/admin/page.tsx`: dashboard counts and logging status card.
-- `app/admin/profile/page.tsx`: edits Supabase auth user metadata.
-- `app/admin/datasets/page.tsx`: datasets table + CRUD modal + optional file upload in Add mode.
-- `app/admin/datasets/[id]/page.tsx`: server component for dataset detail and internal processing call.
-- `app/admin/publications/page.tsx`: publications CRUD modal + Add-mode upload.
-- `app/admin/requests/page.tsx`: access request CRUD + top-level upload notice section.
-- `app/admin/projects/page.tsx`: projects CRUD + top-level upload notice section.
+## 3. Deployment Topology
 
-### 3.3 API routes
-- `app/api/logs/route.ts`: log ingest endpoint, geo enrichment, call to logger.
-- `app/api/uploads/route.ts`: multipart file upload API with category allowlist.
+### Compose service characteristics
+- Service: `web`
+- Image: `netra-anveshan-portal:latest`
+- Build source: local `Dockerfile`
+- Pull behavior: `pull_policy: never`
+- Port map: host `80` -> container `3000`
+- Restart policy: `unless-stopped`
+- Healthcheck: GET `/` on `127.0.0.1:3000` every 30s
 
-### 3.4 Components
-- `components/Navbar.tsx`: responsive nav with optional theme toggle and portal button.
-- `components/Footer.tsx`: global footer with links and contact details.
-- `components/ThemeToggle.tsx`: localStorage-based light/dark toggle.
-- `components/ProtectedRoute.tsx`: client-side session check and redirect.
-- `components/AdminSidebar.tsx`: admin nav and sign-out action.
-- `components/AdminCrudModal.tsx`: reusable modal wrapper for admin forms.
+### Container hardening
+- non-root runtime user: `node`
+- security options: `no-new-privileges:true`
+- capabilities dropped: `ALL`
+- tmpfs mounted at `/tmp`
 
-### 3.5 Libraries
-- `lib/utils.ts`: class merge helper (`cn`).
-- `lib/supabase/client.ts`: Supabase client instance creation from public env vars.
-- `lib/geoip.ts`: external IP geolocation fetch + cache + private IP guard.
-- `lib/logger.ts`: structured logger, secret masking, route-based file dispatch, Python file writer integration.
+### Build-time public env handling
+`Dockerfile` builder stage sets:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
 
-### 3.6 Middleware
-- `middleware.ts`: request lifecycle logging, request ID propagation, `/api/logs` forwarding, static asset skip logic.
+This is critical because client-side portal login requires correct build-time public vars.
 
-### 3.7 Docker and scripts
-- `Dockerfile`: multi-stage build + runtime setup + Python install + non-root user.
-- `docker-compose.yml`: port mapping, envs, mounts, healthcheck, restart policy, security options.
-- `scripts/start-with-logs.sh`: starts app and mirrors stdout/stderr into container log file.
-- `scripts/write_log.py`: receives JSON payload on stdin and appends logs to target files.
+---
 
-### 3.8 Database and Supabase
-- `database-schema.sql`: full schema, RLS setup, policies, indexes.
-- `supabase/config.toml`: local Supabase CLI environment config.
-- `supabase/migrations/20260325154700_init_schema.sql`: baseline schema migration.
-- `supabase/migrations/20260325162000_clear_existing_data.sql`: truncate/reset migration.
-- `supabase/migrations/20260325170000_admin_activity_logs.sql`: introduces DB activity logs + triggers.
-- `supabase/migrations/20260325183000_remove_admin_activity_logs.sql`: removes activity logs table/triggers.
-- `supabase/migrations/20260325192000_create_staff_accounts_and_profiles.sql`: staff roster/profile and auth linkage migration.
-- `supabase/migrations/20260325200000_fix_authenticated_crud_policies.sql`: CRUD grants and policies for authenticated users.
+## 4. Architecture and Data Flow
 
-### 3.9 Non-code files acknowledged (not source logic)
-- `app/icon.svg`, `app/apple-icon.svg`.
-- `public/*` static media.
-- `geoip/*.mmdb` GeoLite database files.
-- `uploads/*` user-uploaded sample files and placeholders.
-- `logs/*` runtime logs.
-- `LOG_COLLECTION_PLAYBOOK copy.md` generic logging playbook reference.
+### 4.1 Request lifecycle (high level pseudocode)
 
-## 4. Feature Behavior Details
+```text
+Incoming HTTP request
+  -> Next middleware checks path
+  -> request id/trace id computed
+  -> internal healthcheck requests optionally skipped
+  -> request_received payload sent to /api/logs
+  -> route/page executes
+  -> request_completed payload sent to /api/logs
+  -> response returned
+```
 
-### 4.1 Public site
-- Static/informational pages are rendered as client components with theme hydration from localStorage.
-- Navbar and Footer are reused across public pages.
+### 4.2 Log ingest flow pseudocode
 
-### 4.2 Auth flow
-- User signs in via `/portal` using Supabase password auth.
-- On success, router navigates to `/admin`.
-- `ProtectedRoute` checks session and redirects unauthenticated users back to `/portal`.
+```text
+POST /api/logs
+  parse request body
+  extract client ip from body/header chain
+  normalize ip
+  attempt geo lookup for public ip
+  merge request metadata + geo fields
+  logger.log(sanitized entry)
+  return ok
+```
 
-### 4.3 Admin CRUD
-- Datasets/publications/requests/projects all perform Supabase read/write operations directly from client pages.
-- Admin modal component is shared by most CRUD pages.
-- Dataset and publication pages show file upload input only in Add mode.
+### 4.3 Logger write flow pseudocode
 
-### 4.4 Upload flow
-- Upload endpoint validates category against allowlist.
-- Filename is sanitized to safe characters.
-- File is stored under `uploads/<category>/`.
+```text
+logger.log(entry)
+  fill defaults and trace ids
+  merge flat geo fields from entry or entry.geo
+  mask secrets recursively
+  print structured JSON to stdout
+  choose route-specific file target
+  invoke python writer with payload
+  append to /app/logs files
+```
 
-### 4.5 Logging behavior
-- Two middleware events per request: `request_received`, `request_completed`.
-- API log ingest can enrich IP geo fields.
-- Logger masks sensitive keys/patterns and writes JSON lines.
-- Route-specific logs are split into website/admin files for easier analysis.
+### 4.4 Upload flow pseudocode
 
-## 5. Data Model Summary
+```text
+POST /api/uploads (multipart)
+  validate category in allowlist
+  validate file exists
+  sanitize file name
+  mkdir uploads/<category>
+  write binary
+  return relative path
+```
 
-Core tables:
-- `datasets`: catalog entries for AI datasets.
-- `publications`: research publication records.
-- `access_requests`: inbound access/collaboration requests.
-- `research_projects`: internal research project tracker.
-- `staff_users`: roster/profile metadata linked to auth users.
+---
 
-RLS:
-- Public read policies for public datasets and published publications.
-- Authenticated users have broad CRUD policies for ERP entities.
+## 5. Full Code/Config Inventory with Purpose and Pseudocode
 
-## 6. Docker and Deployment Details
+Notes:
+- Every tracked code/config/sql/script file is acknowledged below.
+- Static images/icons are acknowledged in section 6.
 
-Compose service `web` (`container_name: netra-anveshan-portal`):
-- Image/build target: `netra-anveshan-portal:latest`.
-- Host mapping: `80:3000`.
-- Volumes:
-  - `./logs:/app/logs`
-  - `./uploads:/app/uploads`
-- Health check:
-  - `wget -qO /dev/null http://127.0.0.1:3000/`
-- Security:
-  - `cap_drop: ALL`
-  - `no-new-privileges:true`
-  - `tmpfs: /tmp`
-- Restart policy: `unless-stopped`.
+### 5.1 Root and platform configs
 
-## 7. Operational Notes
+#### `package.json`
+Purpose:
+- Defines scripts, dependency versions, and Node engine.
 
-### Logs folder deletion behavior
-- If `logs/` is deleted, it is recreated when logger writes again.
-- In Docker mode, bind mount path is recreated by Docker/host path creation.
-- Historical entries are permanently removed if folder was deleted.
+Pseudo:
+```text
+scripts.dev -> next dev -p 80
+scripts.build -> next build
+scripts.start -> next start -p 80
+```
 
-### Health check status
-- Health check is present and active in compose.
-- Container shows healthy when endpoint returns success.
+#### `next.config.js`
+Purpose:
+- Next output mode and API headers.
 
-## 8. Verified Inconsistencies and Risks
+Pseudo:
+```text
+set output: standalone
+set permissive CORS headers for /api/*
+allow image remote patterns
+```
 
-### 8.1 Contact information mismatch
-- `app/contact/page.tsx` shows phone `+91 9914173314`.
-- `components/Footer.tsx` and `app/privacy-policy/page.tsx` still show `(555) 123-4000`.
+#### `tsconfig.json`
+Purpose:
+- Strict TypeScript and import aliases.
 
-### 8.2 Dataset detail page hardening risk
-File: `app/admin/datasets/[id]/page.tsx`
-- Contains TODO/FIXME comments acknowledging missing sanitization.
-- Passes `searchParams` directly in internal API payload.
-- Internal API URL and token behavior should be hardened for production-grade SSRF/input controls.
+Pseudo:
+```text
+strict true
+moduleResolution bundler
+paths '@/*' => './*'
+```
 
-### 8.3 Runtime logging density
-- Healthcheck requests are logged repeatedly and can create high log volume.
-- Consider reducing healthcheck logs to debug or filtering by user agent/path.
+#### `tailwind.config.ts`
+Purpose:
+- Tailwind content scan and theme extensions.
 
-## 9. Recommended Next Engineering Steps
+Pseudo:
+```text
+scan app/components/pages
+extend colors/animations/tokens
+```
 
-1. Normalize contact details across Contact, Footer, and Privacy pages.
-2. Harden `app/admin/datasets/[id]/page.tsx` input validation and outbound request guardrails.
-3. Decide final env management pattern for compose interpolation warnings (`.env` vs shell export).
-4. Add explicit tests (or at least smoke checks) for admin CRUD and auth redirect flow.
-5. Optionally reduce healthcheck log noise.
+#### `postcss.config.js`
+Purpose:
+- CSS processing plugin chain.
 
-## 10. Documentation Alignment Status
+Pseudo:
+```text
+tailwindcss + autoprefixer
+```
 
-This file and `README.md` were rewritten after full codebase pass.
-They now reflect:
-- Current routes.
-- Current Docker/healthcheck behavior.
-- Current logging implementation.
-- Current schema/migration state.
-- Current known gaps from actual code, not historical notes.
+#### `.dockerignore`
+Purpose:
+- Excludes non-required files from Docker build context.
+
+#### `.gitignore`
+Purpose:
+- Excludes generated artifacts, env files, runtime logs, and local secrets.
+
+#### `Dockerfile`
+Purpose:
+- Multi-stage build and production runtime image assembly.
+
+Pseudo:
+```text
+deps stage -> npm ci
+builder stage -> copy app + set public env + next build
+runner stage -> install python3 + copy standalone build + scripts
+create /app/logs and /app/uploads writable by node
+run start-with-logs.sh
+```
+
+#### `docker-compose.yml`
+Purpose:
+- Runtime orchestration, security controls, healthcheck, and ports.
+
+Pseudo:
+```text
+service web:
+  use netra-anveshan-portal:latest
+  never pull from registry
+  build from local Dockerfile if needed
+  map 80:3000
+  inject production envs
+  apply healthcheck and hardening options
+```
+
+### 5.2 Middleware and APIs
+
+#### `middleware.ts`
+Purpose:
+- Request instrumentation and forwarding to `/api/logs`.
+
+Pseudo:
+```text
+if static or /api/logs -> next
+extract ip from headers
+if internal healthcheck pattern -> next
+emit request_received
+next response
+emit request_completed
+```
+
+#### `app/api/logs/route.ts`
+Purpose:
+- Central log ingestion endpoint with geo enrichment.
+
+Pseudo:
+```text
+body = json()
+ip = normalized body/header ip
+geo = getGeoDataForIp(ip)
+logger.log(body + geo + request metadata)
+```
+
+#### `app/api/uploads/route.ts`
+Purpose:
+- Controlled file upload endpoint.
+
+Pseudo:
+```text
+validate category in {datasets, publications, requests, projects}
+sanitize filename
+write to uploads/category
+return success payload
+```
+
+### 5.3 Library modules
+
+#### `lib/supabase/client.ts`
+Purpose:
+- Frontend Supabase client bootstrap with env fallbacks.
+
+Pseudo:
+```text
+url = env NEXT_PUBLIC_SUPABASE_URL or fallback
+anon = env anon/publishable or fallback
+createClient(url, anon)
+```
+
+#### `lib/geoip.ts`
+Purpose:
+- Public-IP geolocation lookup with cache.
+
+Pseudo:
+```text
+normalize ip
+if private/local -> undefined
+if cached -> return
+fetch ipapi.co/ip/json
+map country/city/lat/long/timezone
+cache for 6h
+```
+
+#### `lib/logger.ts`
+Purpose:
+- Structured logger + PII masking + file sink routing.
+
+Pseudo:
+```text
+build log entry defaults
+mask sensitive keys/tokens recursively
+route target by path (website/admin map)
+spawn python writer with payload
+```
+
+#### `lib/utils.ts`
+Purpose:
+- Classname merge helper.
+
+Pseudo:
+```text
+cn(...inputs) -> twMerge(clsx(inputs))
+```
+
+### 5.4 Scripts
+
+#### `scripts/start-with-logs.sh`
+Purpose:
+- Launches Next standalone server and mirrors output into log file.
+
+Pseudo:
+```text
+ensure /app/logs structure and files
+start server.js
+for each output line:
+  re-ensure log structure
+  append to /app/logs/docker/container.log
+```
+
+#### `scripts/write_log.py`
+Purpose:
+- Appends sanitized JSON lines to global and route files.
+
+Pseudo:
+```text
+read json payload from stdin
+for each target file:
+  create parent directories
+  append serialized entry + newline
+```
+
+### 5.5 App pages and admin modules
+
+#### `app/layout.tsx`
+Purpose:
+- Root HTML shell, metadata, and global wrappers.
+
+#### `app/globals.css`
+Purpose:
+- Global styles, theme variables, and utility classes.
+
+#### `app/page.tsx`
+Purpose:
+- Homepage sections and institute overview blocks.
+
+#### `app/about/page.tsx`
+Purpose:
+- About section content and institutional profile.
+
+#### `app/research/page.tsx`
+Purpose:
+- Research overview, tabs/cards, collaboration section.
+
+#### `app/facilities/page.tsx`
+Purpose:
+- Infrastructure and facilities presentation.
+
+#### `app/contact/page.tsx`
+Purpose:
+- Contact UI + form state handling.
+
+#### `app/portal/page.tsx`
+Purpose:
+- Staff authentication screen with Supabase sign-in.
+
+Pseudo:
+```text
+on submit:
+  call supabase.auth.signInWithPassword(email,password)
+  on success -> route /admin
+  on failure -> show error
+```
+
+#### `app/privacy-policy/page.tsx`
+Purpose:
+- Policy/legal content route.
+
+#### `app/admin/layout.tsx`
+Purpose:
+- Admin shell and sidebar composition with route protection.
+
+#### `app/admin/page.tsx`
+Purpose:
+- Dashboard overview cards and basic metrics.
+
+#### `app/admin/profile/page.tsx`
+Purpose:
+- User profile metadata edit/update.
+
+#### `app/admin/datasets/page.tsx`
+Purpose:
+- Dataset CRUD list/form flow and optional upload.
+
+#### `app/admin/datasets/[id]/page.tsx`
+Purpose:
+- Dataset detail and internal processing flow.
+
+Pseudo:
+```text
+read route id + search params
+if INTERNAL_API_URL missing -> fallback dataset
+else POST to internalApi/datasets/<id>/process
+on failure -> fallback dataset
+on success -> mapped dataset details
+```
+
+#### `app/admin/publications/page.tsx`
+Purpose:
+- Publication CRUD operations and upload trigger.
+
+#### `app/admin/requests/page.tsx`
+Purpose:
+- Access request CRUD operations and upload trigger.
+
+#### `app/admin/projects/page.tsx`
+Purpose:
+- Project CRUD operations and upload trigger.
+
+### 5.6 Shared components
+
+#### `components/Navbar.tsx`
+Purpose:
+- Top navigation, responsive menu, route links.
+
+#### `components/Footer.tsx`
+Purpose:
+- Footer links and contact details.
+
+#### `components/ThemeToggle.tsx`
+Purpose:
+- Light/dark mode toggle persisted in localStorage.
+
+#### `components/ProtectedRoute.tsx`
+Purpose:
+- Client-side auth gate for admin routes.
+
+Pseudo:
+```text
+check supabase session
+if no session -> redirect /portal
+else render children
+```
+
+#### `components/AdminSidebar.tsx`
+Purpose:
+- Admin navigation and logout action.
+
+#### `components/AdminCrudModal.tsx`
+Purpose:
+- Generic reusable admin modal wrapper.
+
+### 5.7 Database and Supabase files
+
+#### `database-schema.sql`
+Purpose:
+- Full schema and policy baseline for PostgreSQL/Supabase.
+
+Includes:
+- `datasets`
+- `publications`
+- `access_requests`
+- `research_projects`
+- `staff_users`
+- indexes and RLS policy scaffolding
+
+#### `supabase/config.toml`
+Purpose:
+- Local Supabase CLI project settings.
+
+#### `supabase/migrations/*`
+Purpose:
+- Incremental schema lifecycle (init/reset/activity-log add/remove/staff profile/policy fix).
+
+### 5.8 Other tracked support files
+
+- `LOG_COLLECTION_PLAYBOOK copy.md`: logging strategy reference note.
+- `uploads/*`: seeded upload examples and keep files.
+- `geoip/GeoLite2-City.mmdb`, `geoip/GeoLite2-Country.mmdb`: local geo database assets kept in repo.
+
+---
+
+## 6. Static Assets Acknowledgement
+
+All tracked static media acknowledged under `public/` and app icons:
+- `app/icon.svg`
+- `app/apple-icon.svg`
+- all images in `public/` (logos, banners, photos, themed content images)
+
+No executable logic in these files; they are consumed by page/components for UI rendering.
+
+---
+
+## 7. Logging, Geo, and Healthcheck Behavior (Current)
+
+### 7.1 Healthcheck log filtering
+- Internal docker healthchecks are skipped when they match:
+  - method `GET`
+  - path `/`
+  - user-agent includes `wget` or `healthcheck`
+  - local host/ip pattern
+
+### 7.2 Why geo can be null
+- `lib/geoip.ts` intentionally skips private/local IP ranges.
+- LAN/docker bridge IPs (`192.168.x.x`, `172.19.x.x`, `127.0.0.1`) are not geolocated.
+
+### 7.3 When geo is present
+- Public client IP in forwarded chain.
+- External GeoIP API resolves successfully.
+
+---
+
+## 8. Detailed Operational Commands
+
+### Local dev
+```bash
+npm install
+npm run dev
+```
+
+### Local production-like test
+```bash
+docker compose up -d --build
+docker compose ps
+docker logs --tail 100 netra-anveshan-portal
+```
+
+### Export image for transfer
+```bash
+docker save netra-anveshan-portal:latest | gzip > erp.tar.gz
+sha256sum erp.tar.gz
+```
+
+### Transfer package
+```bash
+scp erp.tar.gz docker-compose.yml <user>@<host>:~/
+```
+
+### Target host deploy from tar
+```bash
+docker load -i ~/erp.tar.gz
+docker compose down
+docker compose up -d --no-build
+docker compose ps
+```
+
+### Log inspection
+```bash
+docker exec netra-anveshan-portal sh -lc 'ls -lah /app/logs'
+docker exec netra-anveshan-portal sh -lc 'tail -n 50 /app/logs/app.log'
+```
+
+---
+
+## 9. Known Gaps / Risk Register
+
+1. `app/admin/datasets/[id]/page.tsx` still contains TODO/FIXME and permissive pass-through behavior.
+2. Contact details mismatch persists between contact page and footer/privacy content.
+3. Geo fields remain null for private IP traffic by design.
+
+---
+
+## 10. Cleanup and Repository Hygiene Actions (This Audit)
+
+Performed/planned in this audit cycle:
+- README rewritten with current architecture and operational steps.
+- DOCUMENTATION rewritten with per-file coverage + pseudocode.
+- `.gitignore` refined for deployment artifacts.
+- Runtime log files cleared for clean baseline testing.
+- Untracked deployment archive excluded from git.
+
+---
+
+## 11. Appendix A - Tracked Source/Config/SQL/Script Files
+
+Authoritative tracked list (excluding node_modules) at audit time:
+
+- `app/about/page.tsx`
+- `app/admin/datasets/[id]/page.tsx`
+- `app/admin/datasets/page.tsx`
+- `app/admin/layout.tsx`
+- `app/admin/page.tsx`
+- `app/admin/profile/page.tsx`
+- `app/admin/projects/page.tsx`
+- `app/admin/publications/page.tsx`
+- `app/admin/requests/page.tsx`
+- `app/api/logs/route.ts`
+- `app/api/uploads/route.ts`
+- `app/apple-icon.svg`
+- `app/contact/page.tsx`
+- `app/facilities/page.tsx`
+- `app/globals.css`
+- `app/icon.svg`
+- `app/layout.tsx`
+- `app/page.tsx`
+- `app/portal/page.tsx`
+- `app/privacy-policy/page.tsx`
+- `app/research/page.tsx`
+- `components/AdminCrudModal.tsx`
+- `components/AdminSidebar.tsx`
+- `components/Footer.tsx`
+- `components/Navbar.tsx`
+- `components/ProtectedRoute.tsx`
+- `components/ThemeToggle.tsx`
+- `database-schema.sql`
+- `docker-compose.yml`
+- `Dockerfile`
+- `.dockerignore`
+- `.gitignore`
+- `lib/geoip.ts`
+- `lib/logger.ts`
+- `lib/supabase/client.ts`
+- `lib/utils.ts`
+- `LOG_COLLECTION_PLAYBOOK copy.md`
+- `middleware.ts`
+- `next.config.js`
+- `package.json`
+- `package-lock.json`
+- `postcss.config.js`
+- `README.md`
+- `scripts/start-with-logs.sh`
+- `scripts/write_log.py`
+- `supabase/config.toml`
+- `supabase/.gitignore`
+- `supabase/migrations/20260325154700_init_schema.sql`
+- `supabase/migrations/20260325162000_clear_existing_data.sql`
+- `supabase/migrations/20260325170000_admin_activity_logs.sql`
+- `supabase/migrations/20260325183000_remove_admin_activity_logs.sql`
+- `supabase/migrations/20260325192000_create_staff_accounts_and_profiles.sql`
+- `supabase/migrations/20260325200000_fix_authenticated_crud_policies.sql`
+- `tailwind.config.ts`
+- `tsconfig.json`
+
+(Static media files under `public/`, upload seed files under `uploads/`, and local geo db files under `geoip/` are intentionally retained and acknowledged.)

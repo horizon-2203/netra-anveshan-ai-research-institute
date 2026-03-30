@@ -20,6 +20,16 @@ function normalizeIp(ip?: string | null): string | undefined {
   return firstIp;
 }
 
+function extractClientIp(request: NextRequest): string | undefined {
+  return normalizeIp(
+    request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      request.headers.get("cf-connecting-ip") ||
+      request.headers.get("true-client-ip") ||
+      request.headers.get("x-client-ip")
+  );
+}
+
 function isLocalIp(ip?: string): boolean {
   if (!ip) return false;
   return ip === "127.0.0.1" || ip === "::1" || ip === "localhost";
@@ -67,7 +77,7 @@ export function middleware(request: NextRequest) {
   const traceId = request.headers.get("x-trace-id") || undefined;
   const startTime = Date.now();
 
-  const clientIp = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || undefined;
+  const clientIp = extractClientIp(request);
 
   if (isInternalHealthcheck(request, clientIp)) {
     return NextResponse.next();
@@ -104,6 +114,8 @@ export function middleware(request: NextRequest) {
     trace_id: traceId,
     method: request.method,
     path: request.nextUrl.pathname,
+    ip: clientIp,
+    user_agent: request.headers.get("user-agent") || undefined,
     status_code: response.status,
     latency_ms: latencyMs,
     component: "next-middleware",

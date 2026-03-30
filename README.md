@@ -1,242 +1,240 @@
 # Netra-Anveshan AI Research Institute Portal
 
-Production-ready Next.js portal and ERP dashboard for Netra-Anveshan AI Research Institute.
+Comprehensive Next.js + Supabase portal with public pages, staff login, protected admin ERP, structured file logging, Docker packaging, and migration-managed database schema.
 
-## Current State (30 March 2026)
+Last verified: 30 March 2026
 
-- Public website routes are implemented and styled.
-- Staff portal authentication uses Supabase Auth.
-- Admin ERP includes CRUD flows for datasets, publications, access requests, and projects.
-- Logging is file-based (JSON entries) with request correlation IDs and geo enrichment.
-- Docker deployment is configured with health checks and security hardening.
-- Container deployment target is HTTP on port 80 via `docker-compose` (`80:3000`).
+## 1. What This Project Is
 
-## Tech Stack
+This repository contains:
+- Public institute website routes.
+- Staff portal (`/portal`) using Supabase Auth.
+- Protected admin ERP for managing datasets, publications, requests, and projects.
+- Structured JSON logging pipeline with request IDs and optional GeoIP enrichment.
+- Dockerized production runtime for portable deployment via image export/import.
 
-- Next.js 16.0.5 (App Router)
-- React 19.1.0
-- TypeScript 5.x (strict mode)
-- Tailwind CSS 3.x
-- Supabase JS client 2.x
-- Docker multi-stage build (Node 20.11 Alpine)
+## 2. Exact Runtime and Tool Versions
 
-## Main Features
+### Core runtime
+- Node.js engine: `20.11.0` (declared in `package.json`)
+- Next.js: `16.0.5`
+- React: `19.1.0`
+- React DOM: `19.1.0`
+- TypeScript: `^5.5.3`
 
-- Public pages:
-	- `/`
-	- `/about`
-	- `/research`
-	- `/facilities`
-	- `/contact`
-	- `/privacy-policy`
-- Staff login page:
-	- `/portal`
-- Protected admin pages:
-	- `/admin`
-	- `/admin/datasets`
-	- `/admin/datasets/[id]`
-	- `/admin/publications`
-	- `/admin/requests`
-	- `/admin/projects`
-	- `/admin/profile`
+### Main dependencies
+- `@supabase/supabase-js`: `^2.49.1`
+- `tailwindcss`: `^3.4.11`
+- `postcss`: `^8.4.47`
+- `autoprefixer`: `^10.4.20`
+- `lucide-react`: `^0.451.0`
+- `uuid`: `^11.1.0`
+- `zod`: `^3.23.8`
+- `react-hook-form`: `^7.53.0`
+- `sonner`: `^1.5.0`
+- `class-variance-authority`: `^0.7.0`
+- `clsx`: `^2.1.1`
+- `tailwind-merge`: `^2.5.2`
 
-## Environment Variables
+### Dev dependencies
+- `eslint`: `^9.9.0`
+- `eslint-config-next`: `16.0.5`
+- `@types/node`: `^22.5.5`
+- `@types/react`: `^19.1.12`
+- `@types/react-dom`: `^19.1.9`
 
-Create `.env.local` and define:
+## 3. Routes
 
-- `NODE_ENV`
-- `NEXT_PUBLIC_SITE_URL`
+### Public
+- `/`
+- `/about`
+- `/research`
+- `/facilities`
+- `/contact`
+- `/privacy-policy`
+- `/portal`
+
+### Protected admin
+- `/admin`
+- `/admin/profile`
+- `/admin/datasets`
+- `/admin/datasets/[id]`
+- `/admin/publications`
+- `/admin/requests`
+- `/admin/projects`
+
+## 4. Key Architecture
+
+### Authentication
+- Supabase client lives in `lib/supabase/client.ts`.
+- `/portal` signs in using `supabase.auth.signInWithPassword`.
+- Admin area is guarded by `components/ProtectedRoute.tsx`.
+
+### Logging pipeline
+1. `middleware.ts` creates request lifecycle events.
+2. Middleware forwards payload to `/api/logs`.
+3. `app/api/logs/route.ts` extracts client IP and enriches geo fields.
+4. `lib/logger.ts` masks sensitive fields and writes structured JSON entries.
+5. `scripts/write_log.py` persists logs to `/app/logs` targets.
+
+### Upload pipeline
+1. UI sends multipart form-data to `POST /api/uploads`.
+2. API validates category allowlist.
+3. Filename is sanitized.
+4. File is written to `uploads/<category>/timestamp_name`.
+
+## 5. Environment Variables
+
+### Public/runtime keys currently wired
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`
-- `INTERNAL_API_URL` (optional for dataset processing page)
-- `DEPLOY_TARGET_PATH` (optional utility variable)
-- `ENABLE_FEATURE_FLAGS`
 
-Important:
-- `docker-compose.yml` references `${...}` environment interpolation and also uses `env_file: .env.local`.
-- If shell interpolation warnings appear during `docker compose`, export vars in shell or use `.env` in addition to `.env.local`.
+### Internal/runtime keys
+- `INTERNAL_API_URL`
+- `NODE_ENV`
+- `LOG_LEVEL`
 
-## Local Development
+Note:
+- Current Docker setup bakes/sets the required Supabase vars inside image and compose.
+- Project can run from loaded image archive without needing external `.env` file at runtime.
 
-Install and run:
+## 6. Local Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Local app URL:
+App binds to:
+- `http://localhost:80`
 
-- `http://localhost:8080`
-
-## Production (Node process)
-
-```bash
-npm run build
-npm run start
-```
-
-Configured start port:
-
-- `80` via `next start -p 80`
-
-## Docker Deployment
-
-Build and run with compose:
+## 7. Docker Run (local machine)
 
 ```bash
 docker compose up -d --build
+docker compose ps
+docker logs --tail 100 netra-anveshan-portal
 ```
 
-Check status:
+Ports:
+- Host `80` -> Container `3000`
 
+## 8. Image Export / Transfer Deployment Workflow
+
+### Build and package
 ```bash
-docker ps
-docker logs -f netra-anveshan-portal
+docker compose build
+docker save netra-anveshan-portal:latest | gzip > erp.tar.gz
+sha256sum erp.tar.gz
 ```
 
-Expected port mapping:
-
-- `0.0.0.0:80->3000/tcp`
-
-## Health Check
-
-Healthcheck is enabled in `docker-compose.yml`:
-
-- Command: `wget -qO /dev/null http://127.0.0.1:3000/`
-- Interval: `30s`
-- Timeout: `5s`
-- Retries: `5`
-- Start period: `20s`
-
-## Logging
-
-### Where logs are written
-
-- Global: `logs/app.log`
-- Website routes:
-	- `logs/website/page.json`
-	- `logs/website/about.json`
-	- `logs/website/research.json`
-	- `logs/website/facilities.json`
-	- `logs/website/contact.json`
-	- `logs/website/portal.json`
-- Admin routes:
-	- `logs/admin/admin.json`
-	- `logs/admin/admindatasets.json`
-	- `logs/admin/adminpublications.json`
-	- `logs/admin/adminrequests.json`
-	- `logs/admin/adminprojects.json`
-	- `logs/admin/adminprofile.json`
-- Container mirror log:
-	- `logs/docker/container.log`
-
-### Log schema highlights
-
-- `timestamp`, `level`, `event`, `message`
-- `request_id`, `trace_id`
-- `method`, `path`, `status_code`, `latency_ms`
-- `ip`, `user_agent`
-- Geo fields:
-	- `country`, `city`, `latitude`, `longitude`, `timezone`
-
-### If `logs/` folder is deleted
-
-- The folder is recreated automatically when the app writes logs again.
-- In Docker mode, host bind mount `./logs:/app/logs` will recreate path on next run.
-- Old log history is lost if deleted.
-
-## Upload Handling
-
-Upload API endpoint:
-
-- `POST /api/uploads`
-
-Allowed categories:
-
-- `datasets`, `publications`, `requests`, `projects`
-
-Files are saved under:
-
-- `uploads/<category>/timestamp_filename`
-
-Current UI notice states uploads are for documentation/demo purpose only.
-
-## Database
-
-Primary tables:
-
-- `datasets`
-- `publications`
-- `access_requests`
-- `research_projects`
-- `staff_users`
-
-Schema source:
-
-- `database-schema.sql`
-
-Supabase migration history is in:
-
-- `supabase/migrations/*`
-
-## Security Controls Already Present
-
-- Protected admin routes via session check in `ProtectedRoute`.
-- Docker hardening:
-	- `cap_drop: ALL`
-	- `security_opt: no-new-privileges:true`
-	- `tmpfs: /tmp`
-- Sensitive field masking in logger (`token`, `password`, `authorization`, etc.).
-
-## Known Gaps and Important Notes
-
-- Contact details are not fully consistent across UI files:
-	- `app/contact/page.tsx` uses `+91 9914173314`
-	- `components/Footer.tsx` and `app/privacy-policy/page.tsx` still show `(555) 123-4000`
-- `app/admin/datasets/[id]/page.tsx` contains explicit TODO/FIXME notes and direct pass-through behavior for internal API filters.
-- GeoIP currently relies on `ipapi.co`; local/private IPs return no geo data.
-
-## Troubleshooting
-
-### Port 80 conflict
-
-Symptom:
-
-- `Bind for 0.0.0.0:80 failed: port is already allocated`
-
-Fix:
-
+### Transfer
 ```bash
-docker ps
-docker stop <container-using-port-80>
-docker compose up -d
+scp erp.tar.gz docker-compose.yml <user>@<host>:~/
 ```
 
-### App works locally but not from other machine
-
-Check:
-
+### Deploy on target host
 ```bash
-hostname -I
-curl -I http://127.0.0.1
-curl -I http://<server-ip>
-sudo ufw status
+docker load -i ~/erp.tar.gz
+docker compose down
+docker compose up -d --no-build
+docker compose ps
 ```
 
-Allow firewall if needed:
-
+### Verify
 ```bash
-sudo ufw allow 80/tcp
+curl -I http://127.0.0.1:80
+docker logs --tail 120 netra-anveshan-portal
 ```
 
-### Verify health
+## 9. Logging Locations and Behavior
 
-```bash
-docker inspect netra-anveshan-portal --format '{{json .State.Health}}'
+Inside container (`/app/logs`):
+- `app.log` (global)
+- `website/*.json`
+- `admin/*.json`
+- `docker/container.log`
+
+Healthcheck noise control:
+- Middleware filters internal GET `/` healthchecks with `wget`/localhost pattern.
+
+Geo fields in each structured log entry:
+- `country`, `city`, `latitude`, `longitude`, `timezone`
+
+Important behavior:
+- Public IP can resolve geo data.
+- Private/local IP ranges (`127.x`, `10.x`, `192.168.x`, `172.16-31.x`) intentionally return no geo data.
+
+## 10. Security and Hardening Notes
+
+- Container runs as non-root (`node`).
+- Runtime directories are pre-created with writable ownership (`/app/logs`, `/app/uploads`).
+- Compose hardening:
+  - `no-new-privileges:true`
+  - `cap_drop: ALL`
+  - `tmpfs: /tmp`
+- Sensitive keys/tokens are masked in logger before file persistence.
+
+## 11. Pseudocode Snapshots (High-Level)
+
+### Middleware
+```text
+on request:
+  if static asset or /api/logs -> pass through
+  requestId = incoming header or generated UUID
+  clientIp = normalize(from x-forwarded-for/x-real-ip/...)
+  if internal healthcheck pattern -> pass through without logging
+  log request_received -> /api/logs
+  response = next()
+  log request_completed -> /api/logs
+  return response
 ```
 
-## Full Technical Reference
+### Log API
+```text
+POST /api/logs:
+  parse json body
+  ip = normalize(body.ip or forwarding headers)
+  geo = getGeoDataForIp(ip)
+  logger.log({...body, ip, geo fields, request/trace IDs})
+  return {ok: true}
+```
 
-For file-by-file and module-by-module documentation, see `DOCUMENTATION.md`.
+### GeoIP
+```text
+if ip missing or private/local -> return undefined
+if ip in cache and not expired -> return cached
+fetch https://ipapi.co/<ip>/json/
+map city/country/lat/long/timezone
+cache for 6 hours
+return data
+```
+
+### Logger
+```text
+build structured log object
+mask sensitive keys/patterns recursively
+print sanitized json to stdout
+write sanitized json via python script to app.log + route file
+```
+
+## 12. Known Functional Constraints
+
+- `/admin/datasets/[id]` uses direct internal API pass-through patterns and should be hardened further for strict production policy.
+- Contact phone text is inconsistent between some pages/components.
+- Geo for private networks is expected to be null.
+
+## 13. Current Repository Hygiene
+
+- Runtime logs are ignored by git.
+- Deployment archives should remain untracked (`*.tar.gz`).
+- PEM key files are ignored (`*.pem`).
+
+## 14. Full Deep Technical Reference
+
+See `DOCUMENTATION.md` for:
+- Complete file-by-file inventory.
+- Per-file pseudocode/logic map.
+- SQL and migration details.
+- Detailed deployment and operations playbook.
