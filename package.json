@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 80",
+    "dev": "sh ./scripts/dev-port80.sh",
     "build": "next build",
     "start": "next start -p 80",
     "lint": "next lint"

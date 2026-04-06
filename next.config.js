@@ -1,10 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['*'],
-      bodySizeLimit: '10mb'
+      bodySizeLimit: '10mb',
     },
   },
   

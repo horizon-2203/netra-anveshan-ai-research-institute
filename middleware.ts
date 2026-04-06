@@ -67,9 +67,18 @@ async function forwardToLogApi(request: NextRequest, payload: Record<string, unk
     // Keep request flow healthy even if logging API is unavailable.
   }
 }
-
 export function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === "/api/logs" || isStaticAsset(request.nextUrl.pathname)) {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith("/api/action")) {
+    return NextResponse.next();
+  }
+
+  if (request.headers.get("next-action")) {
+    return NextResponse.next();
+  }
+
+  if (pathname === "/api/logs" || isStaticAsset(pathname)) {
     return NextResponse.next();
   }
 
@@ -78,6 +87,13 @@ export function middleware(request: NextRequest) {
   const startTime = Date.now();
 
   const clientIp = extractClientIp(request);
+  const defaultGeo = {
+    country: null,
+    city: null,
+    latitude: null,
+    longitude: null,
+    timezone: null,
+  };
 
   if (isInternalHealthcheck(request, clientIp)) {
     return NextResponse.next();
@@ -94,6 +110,7 @@ export function middleware(request: NextRequest) {
     ip: clientIp,
     user_agent: request.headers.get("user-agent") || undefined,
     component: "next-middleware",
+    ...defaultGeo,
   };
 
   console.log(JSON.stringify(receivedPayload));
@@ -119,6 +136,7 @@ export function middleware(request: NextRequest) {
     status_code: response.status,
     latency_ms: latencyMs,
     component: "next-middleware",
+    ...defaultGeo,
   };
 
   console.log(JSON.stringify(completedPayload));

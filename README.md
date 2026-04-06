@@ -4,6 +4,14 @@ Comprehensive Next.js + Supabase portal with public pages, staff login, protecte
 
 Last verified: 30 March 2026
 
+## Deployment Fixes Applied (30 March 2026)
+
+- Dev script now runs through `scripts/dev-port80.sh` to force a Node.js >= 18 runtime even when launched via `sudo npm run dev`.
+- Docker image now bakes required runtime/public variables into `/app/.env.local` during build.
+- Logs are initialized and persisted inside container at `/app/logs` (no host bind dependency).
+- Middleware and log ingest now guarantee geo keys on every request log: `country`, `city`, `latitude`, `longitude`, `timezone`.
+- Legacy `logs/geoip/geoip.json` artifact has been removed.
+
 ## 1. What This Project Is
 
 This repository contains:
@@ -63,6 +71,20 @@ This repository contains:
 - `/admin/requests`
 - `/admin/projects`
 
+### Educational API lab routes
+- `/api/edu/echo/[id]` (GET, POST, OPTIONS)
+- `/api/edu/trace/[...segments]` (GET, POST, PUT, DELETE)
+
+Examples:
+
+```bash
+curl -sS 'http://localhost/api/edu/echo/student-101?module=input&module=validation'
+curl -sS -X POST 'http://localhost/api/edu/echo/student-202' \
+  -H 'content-type: application/json' \
+  -d '{"topic":"server-side-flow","risk":"input-handling"}'
+curl -sS 'http://localhost/api/edu/trace/lab/week1/scenario-a?stage=recon'
+```
+
 ## 4. Key Architecture
 
 ### Authentication
@@ -108,6 +130,8 @@ npm run dev
 
 App binds to:
 - `http://localhost:80`
+
+If low ports are restricted by host policy/capabilities, use `sudo npm run dev` or grant bind capability to Node runtime.
 
 ## 7. Docker Run (local machine)
 
