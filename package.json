@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "setup": "sh ./scripts/setup-local.sh",
+    "setup": "bash ./scripts/setup-local.sh",
     "dev": "sh ./scripts/dev-port80.sh",
-    "build": "next build",
-    "start": "next start -p 80",
+    "build": "sh ./scripts/build-app.sh",
+    "start": "sh ./scripts/start-port80.sh",
+    "prod:up": "npm run setup && npm run build && npm run start",
     "lint": "next lint"
   },
   "engines": {

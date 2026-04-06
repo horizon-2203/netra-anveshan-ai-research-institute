@@ -151,6 +151,14 @@ npm run build
 npm run start
 ```
 
+One-go production command (foreground process):
+
+```bash
+npm run prod:up
+```
+
+This runs setup + build + start using the pinned Node `20.11.0` scripts.
+
 App binds to:
 - `http://localhost:80`
 
