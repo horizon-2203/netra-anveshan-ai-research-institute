@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+trap 'echo "[setup] Failed at line ${LINENO}." >&2' ERR
 
 PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 NODE_VERSION="20.11.0"
@@ -35,7 +36,22 @@ load_nvm() {
   # nvm internals are not strictly nounset-safe on all distros/shell setups.
   set +u
   # shellcheck disable=SC1090
+  set +e
   . "$NVM_DIR/nvm.sh"
+  LOAD_STATUS=$?
+  set -e
+
+  if [ "$LOAD_STATUS" -ne 0 ]; then
+    echo "[setup] Failed to load nvm from $NVM_DIR/nvm.sh" >&2
+    exit 1
+  fi
+
+  if ! command -v nvm >/dev/null 2>&1; then
+    echo "[setup] nvm command is unavailable after loading nvm.sh" >&2
+    exit 1
+  fi
+
+  echo "[setup] nvm loaded."
 }
 
 ensure_node() {
@@ -90,10 +106,19 @@ enable_port80_binding() {
   echo "sudo setcap 'cap_net_bind_service=+ep' $NODE_PATH" >&2
 }
 
+echo "[setup] Step 1/5: ensure nvm"
 ensure_nvm
+
+echo "[setup] Step 2/5: load nvm"
 load_nvm
+
+echo "[setup] Step 3/5: ensure Node $NODE_VERSION"
 ensure_node
+
+echo "[setup] Step 4/5: install dependencies"
 install_deps
+
+echo "[setup] Step 5/5: enable port 80 binding"
 enable_port80_binding
 
 echo "[setup] Complete. Run: npm run dev"
