@@ -7,6 +7,13 @@ NODE_VERSION="20.11.0"
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 export NVM_DIR
 
+sanitize_nvm_env() {
+  # nvm fails when npm prefix is forced globally (common on cloud images).
+  unset npm_config_prefix || true
+  unset NPM_CONFIG_PREFIX || true
+  unset PREFIX || true
+}
+
 resolve_realpath() {
   TARGET_PATH=$1
   if command -v readlink >/dev/null 2>&1; then
@@ -100,6 +107,9 @@ enable_port80_binding() {
 
 echo "[setup] Step 1/5: ensure nvm"
 ensure_nvm
+
+echo "[setup] Step 1.5/5: sanitize npm/nvm environment"
+sanitize_nvm_env
 
 echo "[setup] Step 2/5: load nvm"
 load_nvm
