@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-set -eu
+set -e
 
 PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 NODE_VERSION="20.11.0"
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+export NVM_DIR
 
 resolve_realpath() {
   TARGET_PATH=$1
@@ -26,6 +27,13 @@ ensure_nvm() {
 }
 
 load_nvm() {
+  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    echo "[setup] nvm init script not found at $NVM_DIR/nvm.sh" >&2
+    exit 1
+  fi
+
+  # nvm internals are not strictly nounset-safe on all distros/shell setups.
+  set +u
   # shellcheck disable=SC1090
   . "$NVM_DIR/nvm.sh"
 }
