@@ -140,7 +140,8 @@ What it does:
 - Installs `nvm` if missing.
 - Installs and activates Node `20.11.0` (same as `package.json` engine).
 - Runs `npm ci` using lockfile versions.
-- Grants Node capability to bind port 80 (`cap_net_bind_service`) so `npm run dev` does not require sudo.
+- Grants Node capability to bind port 80 (`cap_net_bind_service`) on the resolved real Node binary.
+- `npm run dev` prefers the pinned nvm Node `20.11.0`, avoiding system-node capability mismatches.
 
 Then run normally:
 

@@ -5,6 +5,16 @@ PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 NODE_VERSION="20.11.0"
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
+resolve_realpath() {
+  TARGET_PATH=$1
+  if command -v readlink >/dev/null 2>&1; then
+    readlink -f "$TARGET_PATH" 2>/dev/null || echo "$TARGET_PATH"
+    return
+  fi
+
+  echo "$TARGET_PATH"
+}
+
 ensure_nvm() {
   if [ -s "$NVM_DIR/nvm.sh" ]; then
     return 0
@@ -43,6 +53,7 @@ install_deps() {
 
 enable_port80_binding() {
   NODE_PATH=$(command -v node)
+  NODE_PATH=$(resolve_realpath "$NODE_PATH")
 
   if command -v getcap >/dev/null 2>&1; then
     if getcap "$NODE_PATH" 2>/dev/null | grep -q cap_net_bind_service; then
@@ -59,7 +70,16 @@ enable_port80_binding() {
   fi
 
   sudo setcap 'cap_net_bind_service=+ep' "$NODE_PATH"
-  echo "[setup] Node can now bind to port 80 without sudo."
+
+  if command -v getcap >/dev/null 2>&1; then
+    if getcap "$NODE_PATH" 2>/dev/null | grep -q cap_net_bind_service; then
+      echo "[setup] Node can now bind to port 80 without sudo."
+      return 0
+    fi
+  fi
+
+  echo "[setup] Warning: capability could not be verified. Run this manually:" >&2
+  echo "sudo setcap 'cap_net_bind_service=+ep' $NODE_PATH" >&2
 }
 
 ensure_nvm
