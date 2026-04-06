@@ -69,9 +69,14 @@ ensure_node() {
 }
 
 install_deps() {
+  if [ -x "$PROJECT_ROOT/node_modules/next/dist/bin/next" ]; then
+    echo "[setup] Dependencies already present. Skipping npm ci."
+    return 0
+  fi
+
   echo "[setup] Installing npm dependencies using lockfile..."
   cd "$PROJECT_ROOT"
-  npm ci
+  npm ci --no-audit --no-fund --progress=false
 }
 
 enable_port80_binding() {
