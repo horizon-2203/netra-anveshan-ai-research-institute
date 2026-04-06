@@ -1,0 +1,71 @@
+#!/bin/sh
+set -eu
+
+PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+NODE_VERSION="20.11.0"
+NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+ensure_nvm() {
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    return 0
+  fi
+
+  echo "[setup] nvm not found. Installing nvm..."
+  mkdir -p "$NVM_DIR"
+  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+}
+
+load_nvm() {
+  # shellcheck disable=SC1090
+  . "$NVM_DIR/nvm.sh"
+}
+
+ensure_node() {
+  if command -v node >/dev/null 2>&1; then
+    CURRENT_VERSION=$(node -v | sed 's/^v//')
+    if [ "$CURRENT_VERSION" = "$NODE_VERSION" ]; then
+      echo "[setup] Node $NODE_VERSION already active."
+      return 0
+    fi
+  fi
+
+  echo "[setup] Installing Node $NODE_VERSION via nvm..."
+  nvm install "$NODE_VERSION"
+  nvm alias default "$NODE_VERSION"
+  nvm use "$NODE_VERSION"
+}
+
+install_deps() {
+  echo "[setup] Installing npm dependencies using lockfile..."
+  cd "$PROJECT_ROOT"
+  npm ci
+}
+
+enable_port80_binding() {
+  NODE_PATH=$(command -v node)
+
+  if command -v getcap >/dev/null 2>&1; then
+    if getcap "$NODE_PATH" 2>/dev/null | grep -q cap_net_bind_service; then
+      echo "[setup] Port 80 bind capability already present on node binary."
+      return 0
+    fi
+  fi
+
+  echo "[setup] Enabling low-port bind capability for Node (requires sudo)..."
+  if ! command -v setcap >/dev/null 2>&1; then
+    echo "[setup] setcap not found. Installing libcap2-bin..."
+    sudo apt-get update
+    sudo apt-get install -y libcap2-bin
+  fi
+
+  sudo setcap 'cap_net_bind_service=+ep' "$NODE_PATH"
+  echo "[setup] Node can now bind to port 80 without sudo."
+}
+
+ensure_nvm
+load_nvm
+ensure_node
+install_deps
+enable_port80_binding
+
+echo "[setup] Complete. Run: npm run dev"

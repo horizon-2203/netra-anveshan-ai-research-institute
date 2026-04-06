@@ -128,6 +128,28 @@ npm install
 npm run dev
 ```
 
+### Fresh machine one-command bootstrap (without Docker)
+
+After cloning, run:
+
+```bash
+npm run setup
+```
+
+What it does:
+- Installs `nvm` if missing.
+- Installs and activates Node `20.11.0` (same as `package.json` engine).
+- Runs `npm ci` using lockfile versions.
+- Grants Node capability to bind port 80 (`cap_net_bind_service`) so `npm run dev` does not require sudo.
+
+Then run normally:
+
+```bash
+npm run dev
+npm run build
+npm run start
+```
+
 App binds to:
 - `http://localhost:80`
 
