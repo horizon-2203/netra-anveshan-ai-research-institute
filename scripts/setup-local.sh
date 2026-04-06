@@ -36,15 +36,7 @@ load_nvm() {
   # nvm internals are not strictly nounset-safe on all distros/shell setups.
   set +u
   # shellcheck disable=SC1090
-  set +e
-  . "$NVM_DIR/nvm.sh"
-  LOAD_STATUS=$?
-  set -e
-
-  if [ "$LOAD_STATUS" -ne 0 ]; then
-    echo "[setup] Failed to load nvm from $NVM_DIR/nvm.sh" >&2
-    exit 1
-  fi
+  . "$NVM_DIR/nvm.sh" --no-use
 
   if ! command -v nvm >/dev/null 2>&1; then
     echo "[setup] nvm command is unavailable after loading nvm.sh" >&2
